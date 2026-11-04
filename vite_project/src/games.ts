@@ -97,10 +97,9 @@ function renderGamesTableDOM(rows: GameRowData[], lang: SupportedLanguage = getL
           <td class="col-id">${formattedId}</td>
           <td class="col-version">
             <span class="version-pill version-${version.name}">${versionName}</span>
-            <small class="version-slug">${version.name}</small>
+            <small class="version-slug">${genLabel}</small>
           </td>
           <td class="col-group">${groupTitle}</td>
-          <td class="col-gen"><span class="gen-tag">${genLabel}</span></td>
           <td class="col-region">${regionsLabel}</td>
         </tr>
       `;
@@ -116,7 +115,6 @@ function renderGamesTableDOM(rows: GameRowData[], lang: SupportedLanguage = getL
               <th>${t.colId}</th>
               <th>${t.colVersion}</th>
               <th>${t.colVersionGroup}</th>
-              <th>${t.colGeneration}</th>
               <th>${t.colRegion}</th>
             </tr>
           </thead>

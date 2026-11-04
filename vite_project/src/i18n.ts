@@ -58,6 +58,20 @@ export const UI_TEXT: Record<
     colGeneration: string;
     colRegion: string;
     languageLabel: string;
+    movesLabel: string;
+    statsLabel: string;
+    loadingDetail: string;
+    loading3d: string;
+    close: string;
+    prev: string;
+    next: string;
+    evolutionChainLabel: string;
+    genderLabel: string;
+    maleLabel: string;
+    femaleLabel: string;
+    genderlessLabel: string;
+    shinyLabel: string;
+    regionalFormsLabel: string;
   }
 > = {
   en: {
@@ -80,6 +94,20 @@ export const UI_TEXT: Record<
     colGeneration: 'Generation',
     colRegion: 'Region',
     languageLabel: 'Language',
+    movesLabel: 'Moves',
+    statsLabel: 'Stats',
+    loadingDetail: 'Loading Pokémon details...',
+    loading3d: 'Loading 3D model...',
+    close: 'Close',
+    prev: 'Previous Pokémon',
+    next: 'Next Pokémon',
+    evolutionChainLabel: 'Evolution Chain',
+    genderLabel: 'Gender',
+    maleLabel: 'Male',
+    femaleLabel: 'Female',
+    genderlessLabel: 'Genderless',
+    shinyLabel: 'Shiny',
+    regionalFormsLabel: 'Regional & Special Evolutions',
   },
   'zh-Hant': {
     allPokemon: '所有寶可夢',
@@ -101,6 +129,20 @@ export const UI_TEXT: Record<
     colGeneration: '世代',
     colRegion: '地區',
     languageLabel: '語言',
+    movesLabel: '招式',
+    statsLabel: '能力值',
+    loadingDetail: '正在載入寶可夢資料...',
+    loading3d: '正在載入 3D 模型...',
+    close: '關閉',
+    prev: '上一隻寶可夢',
+    next: '下一隻寶可夢',
+    evolutionChainLabel: '進化鏈',
+    genderLabel: '性別',
+    maleLabel: '雄性',
+    femaleLabel: '雌性',
+    genderlessLabel: '無性別',
+    shinyLabel: '異色',
+    regionalFormsLabel: '地區形態與特殊進化',
   },
   ja: {
     allPokemon: 'すべてのポケモン',
@@ -122,6 +164,20 @@ export const UI_TEXT: Record<
     colGeneration: '世代',
     colRegion: '地方',
     languageLabel: '言語',
+    movesLabel: 'わざ',
+    statsLabel: 'ステータス',
+    loadingDetail: 'ポケモンの詳細を読み込み中...',
+    loading3d: '3Dモデルを読み込み中...',
+    close: '閉じる',
+    prev: '前のポケモン',
+    next: '次のポケモン',
+    evolutionChainLabel: '進化チェーン',
+    genderLabel: '性別',
+    maleLabel: 'オス',
+    femaleLabel: 'メス',
+    genderlessLabel: '性別不明',
+    shinyLabel: '色違い',
+    regionalFormsLabel: 'リージョンフォーム・特殊進化',
   },
 };
 
@@ -234,5 +290,108 @@ export function formatGenerationShort(
     return `第${roman}世代`;
   }
   return `Gen ${roman}`;
+}
+
+
+/** Localized names for base stats */
+const STAT_TRANSLATIONS: Record<string, Record<SupportedLanguage, string>> = {
+  hp: { en: 'HP', 'zh-Hant': 'HP', ja: 'HP' },
+  attack: { en: 'Attack', 'zh-Hant': '攻擊', ja: 'こうげき' },
+  defense: { en: 'Defense', 'zh-Hant': '防禦', ja: 'ぼうぎょ' },
+  'special-attack': { en: 'Sp. Attack', 'zh-Hant': '特攻', ja: 'とくこう' },
+  'special-defense': { en: 'Sp. Defense', 'zh-Hant': '特防', ja: 'とくぼう' },
+  speed: { en: 'Speed', 'zh-Hant': '速度', ja: 'すばやさ' },
+};
+
+/**
+ * Resolve localized base stat label (e.g. "special-attack" -> "Sp. Attack" / "特攻" / "とくこう").
+ */
+export function getLocalizedStatName(
+  statSlug: string,
+  lang: SupportedLanguage = currentLanguage
+): string {
+  return STAT_TRANSLATIONS[statSlug]?.[lang] || capitalize(statSlug);
+}
+
+/** Short localized badge labels for special forms (Mega, G-Max, Primal, Origin, Regional) */
+const FORM_BADGE_TRANSLATIONS: Record<string, Record<SupportedLanguage, string>> = {
+  mega: { en: 'Mega', 'zh-Hant': '超級進化', ja: 'メガシンカ' },
+  'mega-x': { en: 'Mega X', 'zh-Hant': '超級進化 X', ja: 'メガシンカ X' },
+  'mega-y': { en: 'Mega Y', 'zh-Hant': '超級進化 Y', ja: 'メガシンカ Y' },
+  gmax: { en: 'G-Max', 'zh-Hant': '超極巨化', ja: 'キョダイマックス' },
+  primal: { en: 'Primal', 'zh-Hant': '原始回歸', ja: 'ゲンシカイキ' },
+  origin: { en: 'Origin', 'zh-Hant': '起源形態', ja: 'オリジンフォルム' },
+  alola: { en: 'Alola', 'zh-Hant': '阿羅拉', ja: 'アローラ' },
+  galar: { en: 'Galar', 'zh-Hant': '伽勒爾', ja: 'ガラル' },
+  hisui: { en: 'Hisui', 'zh-Hant': '洗翠', ja: 'ヒスイ' },
+  paldea: { en: 'Paldea', 'zh-Hant': '帕底亞', ja: 'パルデア' },
+};
+
+/**
+ * Determine the form category key from a Pokémon or form slug (e.g. "venusaur-mega" -> "mega", "rattata-alola" -> "alola").
+ */
+export function getFormCategoryKey(slug: string): string | null {
+  const lower = slug.toLowerCase();
+  if (lower.endsWith('-mega-x')) return 'mega-x';
+  if (lower.endsWith('-mega-y')) return 'mega-y';
+  if (lower.endsWith('-mega')) return 'mega';
+  if (lower.endsWith('-gmax')) return 'gmax';
+  if (lower.endsWith('-primal')) return 'primal';
+  if (lower.endsWith('-origin')) return 'origin';
+  if (lower.includes('-alola')) return 'alola';
+  if (lower.includes('-galar')) return 'galar';
+  if (lower.includes('-hisui')) return 'hisui';
+  if (lower.includes('-paldea')) return 'paldea';
+  return null;
+}
+
+/**
+ * Get a short localized badge tag for a special form slug (or null for default forms).
+ */
+export function getLocalizedFormTag(
+  slug: string,
+  lang: SupportedLanguage = currentLanguage
+): string | null {
+  const key = getFormCategoryKey(slug);
+  if (!key) return null;
+  return FORM_BADGE_TRANSLATIONS[key]?.[lang] ?? capitalize(key);
+}
+
+/**
+ * Resolve localized full name for a Pokémon or special form (e.g., Mega Venusaur / 超級妙蛙花 / メガフシギバナ, or Alolan Rattata).
+ */
+export function resolveLocalizedFormName(
+  speciesNames: readonly Name[] | undefined,
+  formFullNames: readonly Name[] | undefined,
+  formSubNames: readonly Name[] | undefined,
+  slug: string,
+  lang: SupportedLanguage = currentLanguage
+): string {
+  if (formFullNames && formFullNames.length > 0) {
+    const fullEntry =
+      lang === 'ja'
+        ? localize(formFullNames, { language: 'ja-Hrkt', fallback: 'ja' })
+        : localize(formFullNames, { language: lang, fallback: '' });
+    if (fullEntry?.name) return fullEntry.name;
+  }
+
+  const baseName = resolveLocalizedName(speciesNames, slug.split('-')[0] || slug, lang);
+
+  if (formSubNames && formSubNames.length > 0) {
+    const subEntry =
+      lang === 'ja'
+        ? localize(formSubNames, { language: 'ja-Hrkt', fallback: 'ja' })
+        : localize(formSubNames, { language: lang, fallback: '' });
+    if (subEntry?.name) {
+      return `${baseName} (${subEntry.name})`;
+    }
+  }
+
+  const tag = getLocalizedFormTag(slug, lang);
+  if (tag) {
+    return `${baseName} (${tag})`;
+  }
+
+  return baseName;
 }
 

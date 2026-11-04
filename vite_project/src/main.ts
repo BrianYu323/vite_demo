@@ -1,5 +1,6 @@
 import './style.css';
 import { GENERATIONS } from 'pokenode-ts';
+import { openPokemonDetail } from './detail';
 import { loadGamesPage } from './games';
 import { initMenu, renderMenuTemplate } from './menu';
 import { loadPokedex } from './pokedex';
@@ -26,6 +27,18 @@ initMenu({
       loadGamesPage();
     }
   },
+});
+
+// Open the Pokémon detail page when a card is clicked
+document.getElementById('pokedex')!.addEventListener('click', (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLElement>('.pokemon-card');
+  if (!card) return;
+
+  const id = Number(card.dataset.pokemonId);
+  const ids = Array.from(document.querySelectorAll<HTMLElement>('#pokedex .pokemon-card')).map(
+    (el) => Number(el.dataset.pokemonId)
+  );
+  openPokemonDetail(id, ids);
 });
 
 // Default: show the Pokémon from "kanto" (Generation I)

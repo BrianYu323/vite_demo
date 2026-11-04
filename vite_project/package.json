@@ -13,6 +13,7 @@
     "vite": "^8.3.5"
   },
   "dependencies": {
+    "@google/model-viewer": "^4.4.0",
     "pokenode-ts": "^5.0.0"
   }
 }
