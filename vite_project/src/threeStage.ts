@@ -415,11 +415,36 @@ export class PokedexThreeStage {
       gltf = await this.gltfLoader.loadAsync(url);
     } catch (err) {
       if (token !== this.loadToken || this.disposed) return;
-      if (fallbackSpriteUrl) {
-        await this.loadFallbackSprite(fallbackSpriteUrl, token);
-        return;
+
+      // Retry with the alternate mirror (jsDelivr <-> GitHub Raw) in case of transient CDN/network errors
+      const mirrorUrl = url.includes('cdn.jsdelivr.net/gh/Pokemon-3D-api/assets@main/')
+        ? url.replace(
+            'https://cdn.jsdelivr.net/gh/Pokemon-3D-api/assets@main/',
+            'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/'
+          )
+        : url.replace(
+            'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/',
+            'https://cdn.jsdelivr.net/gh/Pokemon-3D-api/assets@main/'
+          );
+
+      if (mirrorUrl !== url) {
+        try {
+          gltf = await this.gltfLoader.loadAsync(mirrorUrl);
+        } catch (mirrorErr) {
+          if (token !== this.loadToken || this.disposed) return;
+          if (fallbackSpriteUrl) {
+            await this.loadFallbackSprite(fallbackSpriteUrl, token);
+            return;
+          }
+          throw mirrorErr;
+        }
+      } else {
+        if (fallbackSpriteUrl) {
+          await this.loadFallbackSprite(fallbackSpriteUrl, token);
+          return;
+        }
+        throw err;
       }
-      throw err;
     }
 
     if (token !== this.loadToken || this.disposed) {

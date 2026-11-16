@@ -30,7 +30,7 @@ import { PokedexThreeStage } from './threeStage';
  */
 
 const MODEL_OPT_BASE_URL =
-  'https://raw.githubusercontent.com/Pokemon-3D-api/assets/main/models/opt';
+  'https://cdn.jsdelivr.net/gh/Pokemon-3D-api/assets@main/models/opt';
 
 /** Cache whether a specific .glb URL exists in Pokemon-3D-api/assets */
 const glbUrlExistsCache = new Map<string, boolean>();

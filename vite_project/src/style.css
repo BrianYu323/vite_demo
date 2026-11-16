@@ -1386,12 +1386,12 @@ body.detail-open {
     'evolution evolution evolution';
   gap: 1.5rem;
   align-items: center;
-  flex: 1;
+  align-content: start;
 }
 
 .detail-stage-spacer {
   grid-area: spacer;
-  min-height: 390px;
+  min-height: 56vh;
   pointer-events: none;
 }
 
@@ -1406,6 +1406,7 @@ body.detail-open {
 .detail-evolution {
   grid-area: evolution;
   margin-top: 0.25rem;
+  min-width: 0;
 }
 
 /* Section Headings inside Liquid Glass cards */
@@ -1562,20 +1563,39 @@ body.detail-open {
 .evo-chain-list {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: safe center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
   gap: 1rem;
-  padding-top: 0.35rem;
+  padding: 0.45rem 0.25rem 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.42) transparent;
+}
+
+.evo-chain-list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.evo-chain-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+
+.evo-chain-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 9999px;
 }
 
 .evo-stage {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
   justify-content: center;
   gap: 0.85rem;
 }
 
 .evo-arrow {
+  flex-shrink: 0;
   font-size: 1.55rem;
   font-weight: 700;
   color: rgba(255, 255, 255, 0.72);
