@@ -19,12 +19,14 @@ import {
   type SupportedLanguage,
 } from './i18n';
 import { api } from './pokedex';
+import { PokedexThreeStage } from './threeStage';
 
 /**
- * Pokémon detail page.
+ * Pokémon 3D detail page with Liquid Glass UI.
  * - Opens when a `.pokemon-card` is clicked.
- * - Shows a 3D model (regular, shiny, Mega, G-Max, or Regional) from Pokemon-3D-api (https://github.com/Pokemon-3D-api).
- * - Displays Types, possible Gender, Moves, Base Stats, and the Evolution Chain (including Mega, G-Max, and Regional evolutions) below.
+ * - Renders an interactive Three.js 3D stage with theme-colored background, liquid-glass pedestal,
+ *   orbiting rings, and floating energy particles.
+ * - Displays Liquid Glass cards for Types, possible Gender, Moves, Base Stats, and Evolution Chains.
  */
 
 const MODEL_OPT_BASE_URL =
@@ -106,19 +108,24 @@ interface DetailData {
 }
 
 let overlay: HTMLElement | null = null;
+let stageContainer: HTMLElement | null = null;
+let uiLayer: HTMLElement | null = null;
+let threeStage: PokedexThreeStage | null = null;
 let browseIds: number[] = [];
 let currentId: number | null = null;
 let currentData: DetailData | null = null;
 let isShiny = false;
+let isAutoRotate = true;
 let requestToken = 0;
-let modelViewerReady: Promise<unknown> | null = null;
 
-/** Lazy-load the <model-viewer> web component only when the detail page is first opened */
-function ensureModelViewer(): Promise<unknown> {
-  if (!modelViewerReady) {
-    modelViewerReady = import('@google/model-viewer');
+/** Lazily create or return the Three.js stage inside the overlay */
+function ensureThreeStage(): PokedexThreeStage {
+  ensureOverlay();
+  if (!threeStage && stageContainer) {
+    threeStage = new PokedexThreeStage(stageContainer);
+    threeStage.setAutoRotate(isAutoRotate);
   }
-  return modelViewerReady;
+  return threeStage!;
 }
 
 /** Check if a specific .glb URL exists in Pokemon-3D-api/assets */
@@ -471,7 +478,7 @@ async function buildEvolutionChains(
   return { mainEvolutionStages, regionalEvolutionChains };
 }
 
-/** Create the overlay container once */
+/** Create the overlay container once with a persistent Three.js stage + Liquid Glass UI layer */
 function ensureOverlay(): HTMLElement {
   if (overlay) return overlay;
 
@@ -480,9 +487,18 @@ function ensureOverlay(): HTMLElement {
   overlay.className = 'detail-overlay';
   overlay.setAttribute('role', 'dialog');
   overlay.setAttribute('aria-modal', 'true');
+
+  stageContainer = document.createElement('div');
+  stageContainer.className = 'detail-three-stage';
+  overlay.appendChild(stageContainer);
+
+  uiLayer = document.createElement('div');
+  uiLayer.className = 'detail-ui-layer';
+  overlay.appendChild(uiLayer);
+
   document.body.appendChild(overlay);
 
-  // Event delegation for close / prev / next / shiny / evolution card clicks
+  // Event delegation for close / prev / next / shiny / rotate / evolution card clicks
   overlay.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (target.closest('[data-action="close"]')) {
@@ -493,6 +509,8 @@ function ensureOverlay(): HTMLElement {
       navigate(1);
     } else if (target.closest('[data-action="toggle-shiny"]')) {
       toggleShinyForm();
+    } else if (target.closest('[data-action="toggle-rotate"]')) {
+      toggleAutoRotate();
     } else {
       const evoCard = target.closest<HTMLElement>('[data-evo-id]');
       if (evoCard) {
@@ -516,6 +534,16 @@ function ensureOverlay(): HTMLElement {
   return overlay;
 }
 
+/** Toggle 3D camera auto-rotation */
+function toggleAutoRotate(): void {
+  if (!overlay) return;
+  isAutoRotate = !isAutoRotate;
+  threeStage?.setAutoRotate(isAutoRotate);
+  const rotateBtn = overlay.querySelector<HTMLButtonElement>('[data-action="toggle-rotate"]');
+  rotateBtn?.classList.toggle('is-active', isAutoRotate);
+  rotateBtn?.setAttribute('aria-pressed', String(isAutoRotate));
+}
+
 /** Toggle between regular and shiny 3D model and evolution chain sprites */
 async function toggleShinyForm(): Promise<void> {
   if (!currentData || !overlay) return;
@@ -526,21 +554,15 @@ async function toggleShinyForm(): Promise<void> {
   shinyBtn?.classList.toggle('is-active', isShiny);
   shinyBtn?.setAttribute('aria-pressed', String(isShiny));
 
-  const viewer = overlay.querySelector<HTMLElement>('model-viewer');
-  if (viewer) {
-    if (isShiny) {
-      if (modelShinyUrl) {
-        viewer.classList.remove('is-shiny-filtered');
-        viewer.setAttribute('src', modelShinyUrl);
-      } else {
-        viewer.setAttribute('src', modelRegularUrl);
-        viewer.classList.add('is-shiny-filtered');
-      }
-    } else {
-      viewer.classList.remove('is-shiny-filtered');
-      viewer.setAttribute('src', modelRegularUrl);
-    }
-  }
+  const targetUrl = isShiny && modelShinyUrl ? modelShinyUrl : modelRegularUrl;
+  const useShift = isShiny && !modelShinyUrl;
+  const fallbackSprite = getPokemonSpriteUrl(currentData.pokemon.id, {
+    variant: 'official-artwork',
+    shiny: isShiny,
+  });
+  await threeStage?.loadModel(targetUrl, useShift, fallbackSprite).catch((err) => {
+    console.error('Failed to switch shiny 3D model:', err);
+  });
 
   // Update evolution chain sprites to match regular/shiny state
   overlay.querySelectorAll<HTMLImageElement>('.evo-card-img').forEach((img) => {
@@ -616,13 +638,13 @@ async function relocalizeMoves(data: DetailData, lang: SupportedLanguage): Promi
 }
 
 function renderLoading(): void {
-  const el = ensureOverlay();
+  ensureOverlay();
+  if (!uiLayer) return;
   const t = UI_TEXT[getLanguage()];
-  el.innerHTML = `
-    <div class="detail-page">
-      <button type="button" class="detail-close" data-action="close" aria-label="${t.close}">✕</button>
-      <div class="detail-banner" style="--banner-color: #cbd5e1"></div>
-      <div class="state-message detail-loading">${t.loadingDetail}</div>
+  uiLayer.innerHTML = `
+    <div class="detail-page detail-loading-state">
+      <button type="button" class="liquid-glass-btn detail-close" data-action="close" aria-label="${t.close}">✕</button>
+      <div class="liquid-glass-card detail-loading-pill">${t.loadingDetail}</div>
     </div>
   `;
 }
@@ -692,6 +714,7 @@ function renderEvolutionRowHtml(
 
 function renderDetail(data: DetailData, lang: SupportedLanguage = getLanguage()): void {
   const el = ensureOverlay();
+  if (!uiLayer) return;
   const t = UI_TEXT[lang];
   const {
     pokemon,
@@ -700,12 +723,17 @@ function renderDetail(data: DetailData, lang: SupportedLanguage = getLanguage())
     moveNames,
     mainEvolutionStages,
     regionalEvolutionChains,
-    modelRegularUrl,
-    modelShinyUrl,
   } = data;
 
   const primaryType = pokemon.types[0]?.type.name ?? 'normal';
-  const bannerColor = TYPE_BANNER_COLORS[primaryType] ?? '#a8a878';
+  const secondaryType = pokemon.types[1]?.type.name ?? primaryType;
+  const primaryColor = TYPE_BANNER_COLORS[primaryType] ?? '#a8a878';
+  const secondaryColor = TYPE_BANNER_COLORS[secondaryType] ?? primaryColor;
+
+  el.style.setProperty('--theme-primary', primaryColor);
+  el.style.setProperty('--theme-secondary', secondaryColor);
+  el.style.setProperty('--banner-color', primaryColor);
+
   const name = resolveLocalizedFormName(
     species.names,
     form?.names,
@@ -714,8 +742,6 @@ function renderDetail(data: DetailData, lang: SupportedLanguage = getLanguage())
     lang
   );
   const formattedId = `#${species.id.toString().padStart(3, '0')}`;
-  const modelUrl = isShiny && modelShinyUrl ? modelShinyUrl : modelRegularUrl;
-  const useShinyFilter = isShiny && !modelShinyUrl;
 
   const index = browseIds.indexOf(species.id);
   const hasPrev = index > 0;
@@ -763,55 +789,54 @@ function renderDetail(data: DetailData, lang: SupportedLanguage = getLanguage())
       `
       : '';
 
-  el.innerHTML = `
-    <div class="detail-page" style="--banner-color: ${bannerColor}">
-      <button type="button" class="detail-close" data-action="close" aria-label="${t.close}">✕</button>
+  uiLayer.innerHTML = `
+    <div class="detail-page">
+      <!-- Top Floating Liquid Glass Header Bar -->
+      <header class="detail-glass-header">
+        <div class="liquid-glass-pill detail-identity-pill">
+          <span class="detail-id">${formattedId}</span>
+          <h2 class="detail-name">${name}</h2>
+        </div>
 
-      <button type="button" class="detail-nav detail-prev" data-action="prev" aria-label="${t.prev}" ${hasPrev ? '' : 'disabled'}>
+        <div class="detail-header-actions">
+          <button
+            type="button"
+            class="liquid-glass-btn detail-shiny-btn${isShiny ? ' is-active' : ''}"
+            data-action="toggle-shiny"
+            aria-pressed="${isShiny}"
+            title="${t.shinyLabel}"
+          >
+            ✨ <span>${t.shinyLabel}</span>
+          </button>
+
+          <button
+            type="button"
+            class="liquid-glass-btn detail-rotate-btn${isAutoRotate ? ' is-active' : ''}"
+            data-action="toggle-rotate"
+            aria-pressed="${isAutoRotate}"
+            title="${t.rotateLabel}"
+          >
+            ↻ <span>${t.rotateLabel}</span>
+          </button>
+
+          <button type="button" class="liquid-glass-btn detail-close" data-action="close" aria-label="${t.close}">✕</button>
+        </div>
+      </header>
+
+      <!-- Side Prev / Next Liquid Glass Orbs -->
+      <button type="button" class="liquid-glass-btn detail-nav detail-prev" data-action="prev" aria-label="${t.prev}" ${hasPrev ? '' : 'disabled'}>
         <span aria-hidden="true">‹</span>
       </button>
-      <button type="button" class="detail-nav detail-next" data-action="next" aria-label="${t.next}" ${hasNext ? '' : 'disabled'}>
+      <button type="button" class="liquid-glass-btn detail-nav detail-next" data-action="next" aria-label="${t.next}" ${hasNext ? '' : 'disabled'}>
         <span aria-hidden="true">›</span>
       </button>
 
-      <div class="detail-banner"></div>
-
       <div class="detail-body">
-        <!-- Top Center: 3D model + shiny toggle + name + ID -->
-        <div class="detail-center">
-          <div class="detail-model-wrap">
-            <model-viewer
-              class="detail-model${useShinyFilter ? ' is-shiny-filtered' : ''}"
-              src="${modelUrl}"
-              alt="${name}"
-              camera-controls
-              auto-rotate
-              auto-rotate-delay="0"
-              rotation-per-second="25deg"
-              interaction-prompt="none"
-              shadow-intensity="1"
-              exposure="1.05"
-              loading="eager"
-            ></model-viewer>
-          </div>
+        <!-- Central transparent window over the interactive Three.js 3D Pokémon -->
+        <div class="detail-stage-spacer" aria-hidden="true"></div>
 
-          <div class="detail-title-row">
-            <h2 class="detail-name">${name}</h2>
-            <button
-              type="button"
-              class="detail-shiny-btn${isShiny ? ' is-active' : ''}"
-              data-action="toggle-shiny"
-              aria-pressed="${isShiny}"
-              title="${t.shinyLabel}"
-            >
-              ✨ <span>${t.shinyLabel}</span>
-            </button>
-          </div>
-          <span class="detail-id">${formattedId}</span>
-        </div>
-
-        <!-- Left column: Types + Gender + Moves -->
-        <div class="detail-left">
+        <!-- Left Liquid Glass Card: Types + Gender + Moves -->
+        <div class="liquid-glass-card detail-left">
           <h3 class="detail-heading">${t.types}</h3>
           <div class="detail-types">${typesHtml}</div>
 
@@ -822,14 +847,14 @@ function renderDetail(data: DetailData, lang: SupportedLanguage = getLanguage())
           <ul class="detail-moves">${movesHtml}</ul>
         </div>
 
-        <!-- Right column: Base Stats -->
-        <div class="detail-right">
+        <!-- Right Liquid Glass Card: Base Stats -->
+        <div class="liquid-glass-card detail-right">
           <h3 class="detail-heading">${t.statsLabel}</h3>
           <div class="detail-stats">${statsHtml}</div>
         </div>
 
-        <!-- Bottom full-width: Evolution Chain (Main + Mega/G-Max + Regional Forms) -->
-        <div class="detail-evolution">
+        <!-- Bottom Liquid Glass Dock: Evolution Chain (Main + Mega/G-Max + Regional Forms) -->
+        <div class="liquid-glass-card detail-evolution">
           <h3 class="detail-heading">${t.evolutionChainLabel}</h3>
           <div class="evo-chain-list">${mainChainHtml}</div>
           ${regionalChainsHtml}
@@ -847,30 +872,49 @@ async function showPokemon(
   const token = ++requestToken;
   currentId = pokemonId;
 
+  const stage = ensureThreeStage();
+  stage.clearModel();
   if (!currentData) {
     renderLoading();
   } else {
-    overlay?.querySelector('.detail-page')?.classList.add('is-switching');
+    uiLayer?.querySelector('.detail-page')?.classList.add('is-switching');
   }
 
   try {
-    const [data] = await Promise.all([
-      fetchDetail(pokemonId, speciesIdHint, slugHint),
-      ensureModelViewer(),
-    ]);
+    const data = await fetchDetail(pokemonId, speciesIdHint, slugHint);
     if (token !== requestToken) return;
     currentData = data;
+
+    const primaryType = data.pokemon.types[0]?.type.name ?? 'normal';
+    const secondaryType = data.pokemon.types[1]?.type.name ?? primaryType;
+    stage.setTheme({
+      primaryColor: TYPE_BANNER_COLORS[primaryType] ?? '#a8a878',
+      secondaryColor: TYPE_BANNER_COLORS[secondaryType] ?? TYPE_BANNER_COLORS[primaryType] ?? '#a8a878',
+    });
+
     renderDetail(data);
+
+    const targetUrl = isShiny && data.modelShinyUrl ? data.modelShinyUrl : data.modelRegularUrl;
+    const useShift = isShiny && !data.modelShinyUrl;
+    const fallbackSprite = getPokemonSpriteUrl(data.pokemon.id, {
+      variant: 'official-artwork',
+      shiny: isShiny,
+    });
+    stage.loadModel(targetUrl, useShift, fallbackSprite).catch((modelErr) => {
+      console.warn('3D model failed to load:', modelErr);
+    });
   } catch (err) {
     if (token !== requestToken) return;
     console.error('Failed to load Pokémon detail:', err);
-    const el = ensureOverlay();
-    el.innerHTML = `
-      <div class="detail-page">
-        <button type="button" class="detail-close" data-action="close" aria-label="${UI_TEXT[getLanguage()].close}">✕</button>
-        <div class="state-message error detail-loading">${UI_TEXT[getLanguage()].errorLoad}</div>
-      </div>
-    `;
+    ensureOverlay();
+    if (uiLayer) {
+      uiLayer.innerHTML = `
+        <div class="detail-page detail-loading-state">
+          <button type="button" class="liquid-glass-btn detail-close" data-action="close" aria-label="${UI_TEXT[getLanguage()].close}">✕</button>
+          <div class="liquid-glass-card detail-loading-pill error">${UI_TEXT[getLanguage()].errorLoad}</div>
+        </div>
+      `;
+    }
   }
 }
 
@@ -884,7 +928,7 @@ function navigate(step: number): void {
 }
 
 /**
- * Open the detail page for a Pokémon.
+ * Open the 3D Liquid Glass detail page for a Pokémon.
  * @param id National Pokédex ID of the selected Pokémon.
  * @param ids Ordered list of IDs used by the Prev / Next arrows.
  */
@@ -892,6 +936,7 @@ export function openPokemonDetail(id: number, ids: number[] = []): void {
   browseIds = ids.length > 0 ? ids : [id];
   currentData = null;
   isShiny = false;
+  isAutoRotate = true;
 
   const el = ensureOverlay();
   el.classList.add('is-open');
@@ -904,9 +949,15 @@ export function closePokemonDetail(): void {
   requestToken++;
   currentId = null;
   currentData = null;
+  if (threeStage) {
+    threeStage.dispose();
+    threeStage = null;
+  }
   if (overlay) {
     overlay.classList.remove('is-open');
-    overlay.innerHTML = '';
+  }
+  if (uiLayer) {
+    uiLayer.innerHTML = '';
   }
   document.body.classList.remove('detail-open');
 }

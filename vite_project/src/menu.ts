@@ -93,7 +93,6 @@ export function renderMenuTemplate(): string {
             </div>
 
             <a href="#games" class="nav-link" data-filter="games" data-i18n="games">${t.games}</a>
-            <a href="#types" class="nav-link" data-filter="types" data-i18n="types">${t.types}</a>
             <a href="#about" class="nav-link" data-filter="about" data-i18n="about">${t.about}</a>
           </nav>
 
@@ -140,12 +139,6 @@ export function renderMenuTemplate(): string {
             <a href="#games" class="menu-link" data-filter="games">
               <span class="menu-icon">🎮</span>
               <span class="menu-text" data-i18n="games">${t.games}</span>
-            </a>
-          </li>
-          <li>
-            <a href="#types" class="menu-link" data-filter="types">
-              <span class="menu-icon">⚡</span>
-              <span class="menu-text" data-i18n="types">${t.types}</span>
             </a>
           </li>
           <li>

@@ -71,6 +71,7 @@ export const UI_TEXT: Record<
     femaleLabel: string;
     genderlessLabel: string;
     shinyLabel: string;
+    rotateLabel: string;
     regionalFormsLabel: string;
   }
 > = {
@@ -107,6 +108,7 @@ export const UI_TEXT: Record<
     femaleLabel: 'Female',
     genderlessLabel: 'Genderless',
     shinyLabel: 'Shiny',
+    rotateLabel: 'Auto-Rotate',
     regionalFormsLabel: 'Regional & Special Evolutions',
   },
   'zh-Hant': {
@@ -142,6 +144,7 @@ export const UI_TEXT: Record<
     femaleLabel: '雌性',
     genderlessLabel: '無性別',
     shinyLabel: '異色',
+    rotateLabel: '自動旋轉',
     regionalFormsLabel: '地區形態與特殊進化',
   },
   ja: {
@@ -177,6 +180,7 @@ export const UI_TEXT: Record<
     femaleLabel: 'メス',
     genderlessLabel: '性別不明',
     shinyLabel: '色違い',
+    rotateLabel: '自動回転',
     regionalFormsLabel: 'リージョンフォーム・特殊進化',
   },
 };

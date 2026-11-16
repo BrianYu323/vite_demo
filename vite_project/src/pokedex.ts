@@ -18,6 +18,27 @@ import {
 
 export const api = new MainClient();
 
+const CARD_TYPE_COLORS: Record<string, string> = {
+  normal: '#a8a878',
+  fire: '#f08030',
+  water: '#6890f0',
+  grass: '#5dbb63',
+  electric: '#f8d030',
+  ice: '#98d8d8',
+  fighting: '#c03028',
+  poison: '#a040a0',
+  ground: '#e0c068',
+  flying: '#a890f0',
+  psychic: '#f85888',
+  bug: '#a8b820',
+  rock: '#b8a038',
+  ghost: '#705898',
+  dragon: '#7038f8',
+  dark: '#705848',
+  steel: '#b8b8d0',
+  fairy: '#ee99ac',
+};
+
 /** Track active load request so switching generations cancels stale renders */
 let currentRequestId = 0;
 let activeGenerationId: number | string = GENERATIONS.GENERATION_I;
@@ -54,6 +75,8 @@ function renderCard(
 ): HTMLElement {
   const card = document.createElement('div');
   card.className = 'pokemon-card';
+  const primaryType = pokemon.types[0]?.type.name ?? 'normal';
+  card.style.setProperty('--card-theme', CARD_TYPE_COLORS[primaryType] ?? '#a8a878');
   card.setAttribute('data-pokemon-id', String(pokemon.id));
   card.setAttribute('data-default-name', pokemon.name);
 
