@@ -1773,7 +1773,7 @@ body.detail-open {
     left: 0;
     right: 0;
     height: 390px;
-    z-index: 3;
+    z-index: 1;
   }
 
   .detail-glass-header {
@@ -1815,17 +1815,47 @@ body.detail-open {
     left: 0;
     right: 0;
     height: 330px;
-    z-index: 3;
+    z-index: 1;
   }
 
   .detail-glass-header {
     position: relative;
     z-index: 5;
-    gap: 0.65rem;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .detail-identity-pill {
+    min-width: 0;
+    max-width: calc(100% - 140px);
+    padding: 0.45rem 0.9rem;
+    gap: 0.45rem;
+  }
+
+  .detail-id {
+    flex-shrink: 0;
+    font-size: 0.85rem;
   }
 
   .detail-name {
-    font-size: 1.35rem;
+    font-size: clamp(0.95rem, 4vw, 1.25rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .detail-header-actions {
+    flex-shrink: 0;
+    gap: 0.4rem;
+  }
+
+  .detail-shiny-btn,
+  .detail-rotate-btn,
+  .detail-close {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    justify-content: center;
   }
 
   .detail-shiny-btn span,
