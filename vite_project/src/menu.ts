@@ -96,6 +96,12 @@ export function renderMenuTemplate(): string {
             <a href="#about" class="nav-link" data-filter="about" data-i18n="about">${t.about}</a>
           </nav>
 
+          <!-- QR Code Demo Modal Trigger -->
+          <button id="qr-btn" class="lang-btn qr-btn" type="button" aria-label="Show QR Code">
+            <span>📱</span>
+            <span>QR</span>
+          </button>
+
           <!-- Language Switcher Button & Dropdown (All screen sizes) -->
           <div id="lang-dropdown" class="lang-dropdown">
             <button id="lang-btn" class="lang-btn" type="button" aria-label="Change language" aria-expanded="false">
@@ -153,6 +159,19 @@ export function renderMenuTemplate(): string {
 
     <!-- Backdrop overlay for Tablet drawer -->
     <div id="menu-backdrop" class="menu-backdrop"></div>
+
+    <!-- Liquid Glass QR Code Modal for Interview / Mobile Demo -->
+    <div id="qr-modal" class="qr-modal" role="dialog" aria-modal="true" aria-hidden="true">
+      <div class="liquid-glass-card qr-modal-card">
+        <button type="button" id="qr-modal-close" class="liquid-glass-btn detail-close qr-close" aria-label="Close">✕</button>
+        <h3 id="qr-modal-title" class="qr-modal-title">${t.qrTitle}</h3>
+        <p id="qr-modal-hint" class="qr-modal-hint">${t.qrHint}</p>
+        <div class="qr-img-wrap">
+          <img id="qr-modal-img" alt="Demo QR Code" width="220" height="220" loading="lazy" />
+        </div>
+        <a id="qr-modal-link" class="qr-modal-link" target="_blank" rel="noopener noreferrer"></a>
+      </div>
+    </div>
   `;
 }
 
@@ -290,7 +309,56 @@ export function initMenu(options?: MenuOptions) {
   // Subscribe to language changes
   onLanguageChange((lang) => {
     updateMenuLabelsLanguage(lang);
+    const titleEl = document.getElementById('qr-modal-title');
+    const hintEl = document.getElementById('qr-modal-hint');
+    if (titleEl) titleEl.textContent = UI_TEXT[lang].qrTitle;
+    if (hintEl) hintEl.textContent = UI_TEXT[lang].qrHint;
   });
+
+  // QR Code Modal wiring
+  const qrBtn = document.getElementById('qr-btn');
+  const qrModal = document.getElementById('qr-modal');
+  const qrModalClose = document.getElementById('qr-modal-close');
+  const qrImg = document.getElementById('qr-modal-img') as HTMLImageElement | null;
+  const qrLink = document.getElementById('qr-modal-link') as HTMLAnchorElement | null;
+
+  if (qrBtn && qrModal && qrImg && qrLink) {
+    const LIVE_DEMO_URL =
+      window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'https://brianyu323.github.io/vite_demo/'
+        : window.location.origin + window.location.pathname;
+
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(
+      LIVE_DEMO_URL
+    )}`;
+    qrLink.href = LIVE_DEMO_URL;
+    qrLink.textContent = LIVE_DEMO_URL;
+
+    const closeQrModal = () => {
+      qrModal.classList.remove('is-open');
+      qrModal.setAttribute('aria-hidden', 'true');
+    };
+
+    qrBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      qrModal.classList.add('is-open');
+      qrModal.setAttribute('aria-hidden', 'false');
+    });
+
+    qrModalClose?.addEventListener('click', closeQrModal);
+
+    qrModal.addEventListener('click', (e) => {
+      if (e.target === qrModal) {
+        closeQrModal();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && qrModal.classList.contains('is-open')) {
+        closeQrModal();
+      }
+    });
+  }
 
   // Language switcher toggle & selection
   if (langBtn && langDropdown && langMenu) {

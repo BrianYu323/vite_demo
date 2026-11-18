@@ -249,7 +249,7 @@ export class PokedexThreeStage {
     this.scene.add(this.modelWrapper);
 
     this.dracoLoader = new DRACOLoader();
-    this.dracoLoader.setDecoderPath('/draco/');
+    this.dracoLoader.setDecoderPath(`${import.meta.env.BASE_URL}draco/`);
     this.gltfLoader = new GLTFLoader()
       .setDRACOLoader(this.dracoLoader)
       .setMeshoptDecoder(MeshoptDecoder);

@@ -73,6 +73,8 @@ export const UI_TEXT: Record<
     shinyLabel: string;
     rotateLabel: string;
     regionalFormsLabel: string;
+    qrTitle: string;
+    qrHint: string;
   }
 > = {
   en: {
@@ -110,6 +112,8 @@ export const UI_TEXT: Record<
     shinyLabel: 'Shiny',
     rotateLabel: 'Auto-Rotate',
     regionalFormsLabel: 'Regional & Special Evolutions',
+    qrTitle: 'Scan to Open Live Demo',
+    qrHint: 'Scan with your phone or tablet camera to open the 3D Pokédex',
   },
   'zh-Hant': {
     allPokemon: '所有寶可夢',
@@ -146,6 +150,8 @@ export const UI_TEXT: Record<
     shinyLabel: '異色',
     rotateLabel: '自動旋轉',
     regionalFormsLabel: '地區形態與特殊進化',
+    qrTitle: '掃描開啟線上展示',
+    qrHint: '使用手機或平板相機掃描即可開啟 3D 寶可夢圖鑑',
   },
   ja: {
     allPokemon: 'すべてのポケモン',
@@ -182,6 +188,8 @@ export const UI_TEXT: Record<
     shinyLabel: '色違い',
     rotateLabel: '自動回転',
     regionalFormsLabel: 'リージョンフォーム・特殊進化',
+    qrTitle: 'スキャンしてデモを開く',
+    qrHint: 'スマホやタブレットのカメラでスキャンして3D図鑑を開きます',
   },
 };
 
